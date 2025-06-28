@@ -1,70 +1,51 @@
-"""Minimal Telegram bot for AItana – Phase 2.
-
-Run with:
-    python -m aitana.bot
-or simply:
-    python src/aitana/bot.py
-"""
+"""AItana – Phase 3: echo bot with modular handlers."""
 
 from __future__ import annotations
 
-import logging
 import os
 
 from dotenv import load_dotenv
-from telegram import Update
 from telegram.ext import (
     Application,
-    ContextTypes,
+    CommandHandler,
     MessageHandler,
     filters,
 )
 
-# --------------------------------------------------------------------------- #
-# Logging                                                                      #
-# --------------------------------------------------------------------------- #
-logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
+from .handlers import echo_text, start_command
+from .utils import logging as log_utils
 
 # --------------------------------------------------------------------------- #
-# Configuration                                                                #
+# Logging & config                                                            #
 # --------------------------------------------------------------------------- #
-load_dotenv()  # Loads variables from .env into the environment (if .env exists)
+log_utils.setup()
+
+load_dotenv()
 TOKEN = os.getenv("AITANA_TOKEN")
-
 if TOKEN is None:
     raise RuntimeError(
         "Environment variable AITANA_TOKEN is not set. "
-        "Export it or create a .env file with AITANA_TOKEN=<your-token>."
+        "Define it or create a .env file with AITANA_TOKEN=<token>."
     )
 
 # --------------------------------------------------------------------------- #
-# Handlers                                                                     #
+# Application setup                                                           #
 # --------------------------------------------------------------------------- #
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Print every text message to stdout."""
-    user = update.effective_user
-    text = update.message.text if update.message else ""
-    print(f"[{user.username or user.id}] {text}")
+def build_app() -> Application:
+    """Create and return a configured Application instance."""
+    app = Application.builder().token(TOKEN).build()
+
+    # Register handlers
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo_text))
+
+    return app
 
 
-# --------------------------------------------------------------------------- #
-# Entry point                                                                  #
-# --------------------------------------------------------------------------- #
 def main() -> None:
-    """Start the bot (polling)."""
-    application = Application.builder().token(TOKEN).build()
-
-    # Register the handler for any plain text message (no commands)
-    application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text)
-    )
-
-    logger.info("AItana bot started. Waiting for messages…")
-    application.run_polling()
+    """Run the bot with polling."""
+    app = build_app()
+    app.run_polling()
 
 
 if __name__ == "__main__":
