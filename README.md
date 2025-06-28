@@ -19,8 +19,5 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 # 2. Instalar dependencias
 pip install -r requirements.txt
 
-# 3. Exportar el token (o usar archivo .env)
-export AITANA_TOKEN="123456:ABC-DEF..."
-
 # 4. Lanzar el bot
 python -m aitana                  # o: python src/aitana/bot.py
