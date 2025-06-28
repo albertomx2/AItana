@@ -8,4 +8,6 @@ from telegram.ext import ContextTypes
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a simple greeting when the user issues /start."""
+    if not update.message:  # <-- evita None
+        return
     await update.message.reply_text("Hello! I’m AItana 🤖")

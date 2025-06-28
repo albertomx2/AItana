@@ -1,19 +1,43 @@
+# ----------------------- METADATOS BÁSICOS -----------------------
 [project]
 name = "aitana"
 version = "0.1.0"
 description = "AItana – AI-powered Telegram agent"
 authors = [{ name = "Your Name", email = "you@example.com" }]
-readme = "README.md"
 license = { text = "MIT" }
+readme = "README.md"
 requires-python = ">=3.10"
+
+# Dependencias de RUNTIME (las de prod)
 dependencies = [
     "python-telegram-bot>=22.0",
     "python-dotenv>=1.0",
 ]
 
+# ----------------------- DESCUBRIR EL CÓDIGO ---------------------
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+# ------------------------- SCRIPTS ÚTILES ------------------------
+[project.scripts]
+aitana-test = "pytest:main"
+aitana-fmt  = "aitana.utils._ruff_fix:main"
+
+
+# -------------------- CONFIGURACIÓN DE RUFF ---------------------
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+
+# -------------------- CONFIGURACIÓN DE MYPY ---------------------
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true  # no avisa por librerías externas sin stubs
+strict = false                 # modo relajado
