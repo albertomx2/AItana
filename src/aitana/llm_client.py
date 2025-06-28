@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import httpx
 
 API_URL = "https://api.together.xyz/v1/chat/completions"
-MODEL_NAME = os.getenv("MODEL_NAME", "deepseek-chat")
+_MODEL = os.getenv("MODEL_NAME", "meta-llama-3.3-70b-instruct-turbo-free")
+MODEL_NAME: str = cast(str, _MODEL) 
 MAX_TOKENS_OUT = int(os.getenv("MAX_TOKENS_OUT", "300"))
 
 

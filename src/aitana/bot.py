@@ -13,7 +13,15 @@ from telegram.ext import (
     filters,
 )
 
-from .handlers import ask_command, echo_text, start_command
+from .handlers import (
+    ask_command,
+    clear_command,
+    debug_command,
+    echo_text,
+    help_command,
+    start_command,
+    stats_command,
+)
 from .utils import logging as log_utils
 
 # --------------------------------------------------------------------------- #
@@ -46,6 +54,11 @@ def build_app() -> Application:
     # Register handlers
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("ask", ask_command)) 
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("stats", stats_command))
+    app.add_handler(CommandHandler("clear", clear_command))
+    app.add_handler(CommandHandler("debug", debug_command))
+
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo_text))
     logger = log_utils.logging.getLogger(__name__)
     logger.info("Handlers registered: %s", app.handlers)

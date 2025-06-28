@@ -1,13 +1,10 @@
-"""Handler for the /start command."""
-
-from __future__ import annotations
+"""Send welcome + help."""
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from .help import help_command
+
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a simple greeting when the user issues /start."""
-    if not update.message:  # <-- evita None
-        return
-    await update.message.reply_text("Hello! I’m AItana 🤖")
+    await help_command(update, context)
