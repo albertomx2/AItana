@@ -125,9 +125,7 @@ Feel free to tweak the pattern in utils/expenses.py for your language style.
 
 ---
 
-### 📜 Licencia
+### 📜 License
 
-Publicado bajo la licencia **MIT**.  
-Consulta el archivo **LICENSE** para el texto completo.
-
-© 2025 Proyecto AItana
+Released under the **MIT License** – see **LICENSE** for details.
+© 2025 AItana Project
