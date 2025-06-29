@@ -1,104 +1,127 @@
+<!-- README.md -->
+
 <h1 align="center">🤖 AItana</h1>
 <p align="center">
-  <em>Agente de Telegram impulsado por IA — Echo, Q&amp;A, memoria y depuración.</em><br>
+  <em>AI-powered Telegram assistant — multi-function agent with short-term memory, debug mode and (so far) expense tracking.</em><br>
   <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue?logo=python">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
-  <img alt="Build"   src="https://img.shields.io/badge/tests-passing-brightgreen">
+  <img alt="Tests"  src="https://img.shields.io/badge/tests-passing-brightgreen">
 </p>
 
 ---
 
-## ✨ Características
+## ✨ Features
 
-| **Capacidad** | **Comando**                    | **Descripción**                                                     |
-|---------------|--------------------------------|---------------------------------------------------------------------|
-| Saludo & ayuda  | `/start`, `/help`              | Muestra la guía rápida.                                             |
-| Preguntar al LLM (DeepSeek vía Together AI) | `/ask <pregunta>`               | Responde con el modelo configurado y recuerda el contexto.          |
-| Mostrar/Ocultar “pensamientos” del LLM | `/debug on` / `/debug off`      | Activa o desactiva la vista de `<think>…</think>`.                  |
-| Estadísticas de memoria | `/stats`                        | Muestra cuántos pares usuario/asistente se guardan.                 |
-| Borrar memoria | `/clear`                        | Elimina el historial reciente del chat.                             |
-| Eco de respaldo | *texto plano*                   | Cualquier otro texto se devuelve como eco.                          |
+| Capability | Trigger | Description |
+|------------|---------|-------------|
+| Greeting & quick manual | `/start`, `/help` | Sends a concise user guide. |
+| **Expense tracking** (Phase 8) | _Plain sentence containing_ “soy … me he gastado …” etc. | Auto-parses name / amount / place and appends a line to `data/gastos_<name>.csv`, replying with “✅ Gasto registrado: …”. |
+| Chat with LLM (DeepSeek via Together AI) | any other text | Replies with the configured model while keeping short-term context. |
+| Show / hide LLM “thoughts” | `/debug on` / `/debug off` | Toggles the hidden `<think>…</think>` block for that chat. |
+| Memory statistics | `/stats` | Shows how many user/assistant pairs are stored. |
+| Clear memory | `/clear` | Wipes recent history for the chat. |
+| Telegram autocomplete | type `/` | Built-in menu with all commands. |
+
+> **Roadmap:** future phases will add rate-limit, moderation, Docker deploy, long-term memory, etc.
 
 ---
 
-## 🚀 Inicio rápido
+## 🚀 Quick start
 
 ```bash
-# 1. Clonar & entrar
-git clone https://github.com/<tu-usuario>/AItana.git
+# 1. Clone & enter
+git clone https://github.com/<your-user>/AItana.git
 cd AItana
 
-# 2. Crear un entorno virtual
+# 2. Virtualenv
 python3 -m venv .venv && source .venv/bin/activate
 
-# 3. Instalar dependencias
+# 3. Install deps
 pip install -r requirements.txt
-pip install -r dev-requirements.txt   # 🧪 lint & tests (opcional)
+pip install -r dev-requirements.txt  # 🧪 lint & tests (optional)
 
-# 4. Configurar variables de entorno
+# 4. Configure environment
 cp .env.example .env
-nano .env      # pega tu token de TELEGRAM y TOGETHER_API_KEY
+nano .env           # paste TELEGRAM bot token & TOGETHER_API_KEY
 
-# 5. Ejecutar
-python -m aitana
-# (Ejecuta desde la raíz del proyecto para que .env se cargue)
+# 5. Run
+python -m aitana    # run from repo root so .env is loaded
+
 
 ```
 
 ### ⚙️ Configuración (`.env`)
 
-| Variable           | Ejemplo                                                  | Propósito                                             |
+| Variable           | Example                                                  | Purpose                                               |
 |--------------------|----------------------------------------------------------|-------------------------------------------------------|
-| `AITANA_TOKEN`     | `123456:ABC…`                                            | Token de **BotFather**.                               |
-| `TOGETHER_API_KEY` | `tgp_v1_…`                                               | Clave de **Together AI**.                             |
-| `MODEL_NAME`       | `deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free`         | Nombre del modelo a usar.                             |
-| `MAX_HISTORY`      | `6`                                                      | Número de pares turno-a-turno que se conservan.       |
-| `MAX_TOKENS_OUT`   | `300`                                                    | Tokens máximos por respuesta.                         |
+| `AITANA_TOKEN`     | `123456:ABC…`                                            | **BotFather** Token                                   |
+| `TOGETHER_API_KEY` | `tgp_v1_…`                                               | **Together AI** key                                   |
+| `MODEL_NAME`       | `deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free`         | Any model listed by the API.                             |
+| `MAX_HISTORY`      | `6`                                                      | User/assistant pairs kept in prompt window.           |
+| `MAX_TOKENS_OUT`   | `600`                                                    | Max tokens generated per reply.                       |
 
 > [!TIP]
-> Si falta `TOGETHER_API_KEY` o es inválida, el comando `/ask` devuelve error sin consumir créditos.
+> If TOGETHER_API_KEY is missing or invalid the bot replies with an error and no credits are consumed.
 
 ---
 
-## 🗄️ Estructura del proyecto
+## 🗄️ Project layout
 
 ```text
 src/aitana/
-├── bot.py              # Punto de entrada
-├── handlers/           # Manejadores de Telegram
-│   ├── ask.py          # /ask + filtro think
-│   ├── start.py        # /start ➜ ayuda
+├── bot.py              # entry-point
+├── handlers/           # telegram handlers
+│   ├── chat.py         # all text → LLM or expense parser
+│   ├── start.py        # /start → /help
 │   ├── help.py         # /help
 │   ├── stats.py        # /stats
 │   ├── clear.py        # /clear
-│   ├── debug.py        # /debug on|off
-│   └── echo.py         # Eco de respaldo
-├── llm_client.py       # Wrapper de Together AI
-├── memory.py           # Memoria SQLite + flags
-└── utils/              # Logging & helpers
-tests/                  # Pytest suite
+│   └── debug.py        # /debug on|off
+├── utils/
+│   ├── expenses.py     # parse & store CSV lines   ← Phase 8
+│   └── logging.py      # colour logs
+├── llm_client.py       # Together AI REST wrapper
+├── memory.py           # SQLite short-term memory + flags
+└── __main__.py
+tests/                  # pytest suite (ruff, mypy clean)
 
 ```
 
-### 🧑‍💻 Desarrollo
+### 🧑‍💻 Development workflow
 
 ```bash
-# Formateo automático & lint
-aitana-fmt            # ruff --fix
-ruff check src tests  # estilo
-mypy src/aitana       # tipado
+# auto-format & lint
+aitana-fmt          
+ruff check src tests 
+mypy src/aitana       
 
 # Tests
-pytest                # 4 tests, todos en verde ✔️
+pytest
 
 ```
+
+### 💾 Expense file format
+Each user gets a separate CSV in data/:
+```bash
+data/gastos_alberto.csv
+timestamp,amount,place,raw
+2025-06-29T15:42:17,15.0,Mercadona,Hola soy Alberto y me he gastado 15 euros...
+```
+The regex recognises phrases like:
+
+ • Soy Ana y me he gastado 9 € en cine
+ • Me llamo Luis, he gastado 12,50 euros en Zara
+ • Soy Pedro y me acabo de gastar 20 € en el bar
+
+Feel free to tweak the pattern in utils/expenses.py for your language style.
+
 ### ⛑️ Roadmap
 
-- **Fase 7** – Dockerfile + despliegue CI  
-- **Fase 8** – Memoria a largo plazo (resúmenes / vector store)
+- **Fase 9** – Dockerfile + despliegue CI  
+- **Fase 10** – Memoria a largo plazo (resúmenes / vector store)
 
 > [!NOTE]
-> Ideas futuras: *rate-limit*, moderación, voz, web UI… ¡PRs bienvenidos!
+> Extras: rate-limit, voice, web UI… PRs welcome!
 
 ---
 
