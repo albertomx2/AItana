@@ -1,4 +1,4 @@
-"""Async wrapper for Together AI chat completions (DeepSeek-Chat)."""
+"""Async wrapper for Together AI chat completions."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from typing import Any, TypedDict, cast
 import httpx
 
 API_URL = "https://api.together.xyz/v1/chat/completions"
-_MODEL = os.getenv("MODEL_NAME", "meta-llama-3.3-70b-instruct-turbo-free")
-MODEL_NAME: str = cast(str, _MODEL) 
+_MODEL = os.getenv("MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free")
+MODEL_NAME: str = cast(str, _MODEL)
 MAX_TOKENS_OUT = int(os.getenv("MAX_TOKENS_OUT", "300"))
 
 
@@ -20,12 +20,10 @@ class Message(TypedDict):
 
 async def generate(messages: list[Message]) -> str:
     """Call Together AI and return the assistant's reply."""
-    api_key = os.getenv("TOGETHER_API_KEY")  # ← se lee en cada llamada
-    print("DEBUG API_KEY:", os.getenv("TOGETHER_API_KEY")[:8], flush=True)
-
+    api_key = os.getenv("TOGETHER_API_KEY")
     if api_key is None:
         raise RuntimeError(
-            "TOGETHER_API_KEY missing – add it to .env or export it to enable /ask."
+            "TOGETHER_API_KEY missing – add it to .env or export it."
         )
 
     payload: dict[str, Any] = {
