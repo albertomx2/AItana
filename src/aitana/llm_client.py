@@ -10,7 +10,7 @@ import httpx
 API_URL = "https://api.together.xyz/v1/chat/completions"
 _MODEL = os.getenv("MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free")
 MODEL_NAME: str = cast(str, _MODEL)
-MAX_TOKENS_OUT = int(os.getenv("MAX_TOKENS_OUT", "300"))
+MAX_TOKENS_OUT = int(os.getenv("MAX_TOKENS_OUT", "600"))
 
 
 class Message(TypedDict):
@@ -34,7 +34,7 @@ async def generate(messages: list[Message]) -> str:
     }
     headers = {"Authorization": f"Bearer {api_key}"}
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(API_URL, json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()

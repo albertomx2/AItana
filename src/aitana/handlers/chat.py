@@ -1,4 +1,4 @@
-"""Main chat handler – plain messages go to the LLM."""
+"""Main chat handler – any plain message goes to the LLM or registers an expense."""
 
 from __future__ import annotations
 
@@ -9,29 +9,45 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from aitana import llm_client, memory
+from aitana.utils.expenses import add_expense, parse_expense  # 🆕 expense utils
 
 MAX_HISTORY = int(os.getenv("MAX_HISTORY", "6"))
 
 
 async def chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle normal text messages with the LLM."""
+    """Handle normal text messages: detect expenses or reply with LLM."""
     if not (update.message and update.effective_chat):
         return
 
     chat_id = cast(int, update.effective_chat.id)
-    question = (update.message.text or "").strip()
-    if not question:
+    text = (update.message.text or "").strip()
+    if not text:
         return
 
-    # 1⃣  Build prompt
+    # 🔍 1) Try to parse as expense
+    exp = parse_expense(text)
+    if exp:
+        add_expense(exp)
+        await update.message.reply_text(
+            f"✅ Gasto registrado: {exp['amount']:.2f} € en {exp['place']}."
+        )
+        return  # no LLM call
+
+    # 🤖 2) Otherwise, build prompt for the LLM
     messages: list[llm_client.Message] = [
-        {"role": "system", "content": "You are AItana, a helpful assistant."},
-    ]
+    {
+        "role": "system",
+        "content": (
+            "You are AItana, a helpful assistant.\n"
+            "If you include a <think> block, ALWAYS close it with </think>."
+        ),
+    },
+]
     history = await memory.get_last(chat_id, MAX_HISTORY * 2)
     messages += [{"role": r, "content": t} for r, t in history]
-    messages.append({"role": "user", "content": question})
+    messages.append({"role": "user", "content": text})
 
-    # 2⃣  Call model
+    # 3) Call model
     try:
         raw = await llm_client.generate(messages)
     except Exception as exc:  # noqa: BLE001
@@ -40,13 +56,13 @@ async def chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     think, final = _split_think(raw)
 
-    # 3⃣  Send response(s)
+    # 4) Send response(s)
     if await memory.get_debug(chat_id) and think:
         await update.message.reply_text(f"<think>\n{think}\n</think>")
     await update.message.reply_text(final)
 
-    # 4⃣  Persist
-    await memory.append_pair(chat_id, question, final)
+    # 5) Persist
+    await memory.append_pair(chat_id, text, final)
 
 
 # ---------- helpers -------------------------------------------------------- #
