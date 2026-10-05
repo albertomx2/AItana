@@ -1,131 +1,64 @@
-<!-- README.md -->
+# AItana
 
-<h1 align="center">🤖 AItana</h1>
-<p align="center">
-  <em>AI-powered Telegram assistant — multi-function agent with short-term memory, debug mode and (so far) expense tracking.</em><br>
-  <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue?logo=python">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
-  <img alt="Tests"  src="https://img.shields.io/badge/tests-passing-brightgreen">
-</p>
+Asistente de Telegram en Python con conversación mediante Together AI, memoria corta por chat y registro sencillo de gastos en CSV.
 
----
+## Funciones actuales
 
-## ✨ Features
+- `/start`, `/help`: guía.
+- `/stats`, `/clear`: consultar o vaciar memoria.
+- `/debug on` y `/debug off`: mostrar/ocultar bloques de razonamiento del proveedor.
+- Mensajes de gasto reconocidos mediante expresiones regulares: CSV por nombre.
+- Otros mensajes: conversación con el modelo configurado.
 
-| Capability | Trigger | Description |
-|------------|---------|-------------|
-| Greeting & quick manual | `/start`, `/help` | Sends a concise user guide. |
-| **Expense tracking** (Phase 8) | _Plain sentence containing_ “soy … me he gastado …” etc. | Auto-parses name / amount / place and appends a line to `data/gastos_<name>.csv`, replying with “✅ Gasto registrado: …”. |
-| Chat with LLM (DeepSeek via Together AI) | any other text | Replies with the configured model while keeping short-term context. |
-| Show / hide LLM “thoughts” | `/debug on` / `/debug off` | Toggles the hidden `<think>…</think>` block for that chat. |
-| Memory statistics | `/stats` | Shows how many user/assistant pairs are stored. |
-| Clear memory | `/clear` | Wipes recent history for the chat. |
-| Telegram autocomplete | type `/` | Built-in menu with all commands. |
+**No es una IA completamente local.** Telegram y Together AI son servicios externos. La detección de gastos no es un parser financiero universal y el nombre escrito en un mensaje no acredita una identidad.
 
-> **Roadmap:** future phases will add rate-limit, moderation, Docker deploy, long-term memory, etc.
+## Instalación y arranque
 
----
-
-## 🚀 Quick start
+Requisitos: Python 3.10 o superior, token de bot de Telegram y clave de Together AI para conversar.
 
 ```bash
-# 1. Clone & enter
-git clone https://github.com/<your-user>/AItana.git
+git clone https://github.com/albertomx2/AItana.git
 cd AItana
-
-# 2. Virtualenv
-python3 -m venv .venv && source .venv/bin/activate
-
-# 3. Install deps
-pip install -r requirements.txt
-pip install -r dev-requirements.txt  # 🧪 lint & tests (optional)
-
-# 4. Configure environment
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip install -e .
 cp .env.example .env
-nano .env           # paste TELEGRAM bot token & TOGETHER_API_KEY
-
-# 5. Run
-python -m aitana    # run from repo root so .env is loaded
-
-
 ```
 
-### ⚙️ Configuración (`.env`)
+En Windows: `.venv\Scripts\Activate.ps1`. Edita el entorno:
 
-| Variable           | Example                                                  | Purpose                                               |
-|--------------------|----------------------------------------------------------|-------------------------------------------------------|
-| `AITANA_TOKEN`     | `123456:ABC…`                                            | **BotFather** Token                                   |
-| `TOGETHER_API_KEY` | `tgp_v1_…`                                               | **Together AI** key                                   |
-| `MODEL_NAME`       | `deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free`         | Any model listed by the API.                             |
-| `MAX_HISTORY`      | `6`                                                      | User/assistant pairs kept in prompt window.           |
-| `MAX_TOKENS_OUT`   | `600`                                                    | Max tokens generated per reply.                       |
-
-> [!TIP]
-> If TOGETHER_API_KEY is missing or invalid the bot replies with an error and no credits are consumed.
-
----
-
-## 🗄️ Project layout
-
-```text
-src/aitana/
-├── bot.py              # entry-point
-├── handlers/           # telegram handlers
-│   ├── chat.py         # all text → LLM or expense parser
-│   ├── start.py        # /start → /help
-│   ├── help.py         # /help
-│   ├── stats.py        # /stats
-│   ├── clear.py        # /clear
-│   └── debug.py        # /debug on|off
-├── utils/
-│   ├── expenses.py     # parse & store CSV lines   ← Phase 8
-│   └── logging.py      # colour logs
-├── llm_client.py       # Together AI REST wrapper
-├── memory.py           # SQLite short-term memory + flags
-└── __main__.py
-tests/                  # pytest suite (ruff, mypy clean)
-
-```
-
-### 🧑‍💻 Development workflow
+| Variable | Función |
+| --- | --- |
+| AITANA_TOKEN | Token obtenido con BotFather |
+| TOGETHER_API_KEY | Clave privada del proveedor |
+| MODEL_NAME | Identificador de un modelo disponible en tu cuenta |
+| MAX_HISTORY | Pares de mensajes mantenidos, por defecto 6 |
+| MAX_TOKENS_OUT | Límite de salida, por defecto 600 |
 
 ```bash
-# auto-format & lint
-aitana-fmt          
-ruff check src tests 
-mypy src/aitana       
-
-# Tests
-pytest
-
+python -m aitana
 ```
 
-### 💾 Expense file format
-Each user gets a separate CSV in data/:
+El bot usa polling; no requiere publicar un puerto ni configurar webhook. Abre el chat del bot y prueba `/help`. Detén el proceso con Ctrl+C.
+
+El modelo por defecto del código es histórico: confirma que sigue disponible y su precio en tu cuenta. No se garantiza acceso gratuito. Parte de la configuración del cliente LLM se lee al importar módulos: si `MODEL_NAME` del archivo no se aplica, exporta la variable antes de arrancar y reinicia.
+
+## Persistencia y privacidad
+
+Los gastos se escriben en `data/gastos_<nombre>.csv`, con fecha, cantidad, lugar y mensaje original. Revisa `src/aitana/memory.py` para la memoria SQLite. Guarda copias privadas y no subas CSV, memoria, mensajes ni `.env`.
+
+No hay lista de usuarios autorizados en el arranque revisado: antes de uso real, añadir control de acceso, límites y una política de retención. No enviar documentos confidenciales al proveedor.
+
+## Desarrollo
+
 ```bash
-data/gastos_alberto.csv
-timestamp,amount,place,raw
-2025-06-29T15:42:17,15.0,Mercadona,Hola soy Alberto y me he gastado 15 euros...
+python -m pip install -r dev-requirements.txt
+python -m pytest
+python -m ruff check src tests
+python -m mypy src/aitana
 ```
-The regex recognises phrases like:
 
- • Soy Ana y me he gastado 9 € en cine
- • Me llamo Luis, he gastado 12,50 euros en Zara
- • Soy Pedro y me acabo de gastar 20 € en el bar
+`src/aitana/handlers` gestiona comandos; `llm_client.py` llama a Together; `utils/expenses.py` analiza gastos. Esta revisión comprueba documentación contra el código, no la conexión real a Telegram/Together.
 
-Feel free to tweak the pattern in utils/expenses.py for your language style.
-
-### ⛑️ Roadmap
-
-- **Fase 9** – Dockerfile + despliegue CI  
-- **Fase 10** – Memoria a largo plazo (resúmenes / vector store)
-
-> [!NOTE]
-> Extras: rate-limit, voice, web UI… PRs welcome!
-
----
-
-### 📜 License
-
-Released under the **MIT License** – see **LICENSE** for details.
-© 2025 AItana Project
+MIT, según `LICENSE`. Pendientes: autorización, mejor extracción, tests de integración y despliegue reproducible.
